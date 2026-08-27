@@ -150,6 +150,8 @@ CRITICAL SEQUENCING RULES:
 2. Shots 2-4 build context, problem agitation, and the revelation/solution.
 3. The Call to Action (CTA) / DM prompt / Purchase link / Save instruction MUST ONLY appear in the final Shot (Shot 5 / CTA).
 
+CRITICAL LANGUAGE RULE: When explaining a biological, scientific, or physiological mechanism (e.g., receptors, neurotransmitters, hormones, enzymes), always describe it in simple, everyday conversational language — the way a relatable creator would explain it to a friend — never in clinical, pharmacological, or medical-textbook terminology. For example, prefer "engana o teu cérebro para não sentires o cansaço" over "bloqueia os recetores de adenosina". This keeps the authentic UGC voice AND avoids overly clinical phrasing that can be misread as medical/pharmaceutical claims when the shot is later turned into an AI-generated video.
+
 Idea / Angle:
 ${JSON.stringify(idea, null, 2)}
 
@@ -255,6 +257,8 @@ Context:
 - Language: ${brandMemory?.language || 'Portuguese (Portugal / International)'}
 
 ${shotGuide}
+
+CRITICAL LANGUAGE RULE: When explaining a biological, scientific, or physiological mechanism (e.g., receptors, neurotransmitters, hormones, enzymes), always describe it in simple, everyday conversational language — the way a relatable creator would explain it to a friend — never in clinical, pharmacological, or medical-textbook terminology. For example, prefer "engana o teu cérebro para não sentires o cansaço" over "bloqueia os recetores de adenosina". This keeps the authentic UGC voice AND avoids overly clinical phrasing that can be misread as medical/pharmaceutical claims when the shot is later turned into an AI-generated video.
 
 Provide an updated shot object with:
 - shotNumber (${shotNumber})
