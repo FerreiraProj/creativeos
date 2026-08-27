@@ -557,7 +557,7 @@ export const ShotStudio: React.FC<ShotStudioProps> = ({
               {/* Shot Visualizer Canvas: a real <video> once generated, otherwise the
                   image+karaoke-text simulation (unchanged from before this shot has a
                   real video) */}
-              <div className="relative rounded-2xl overflow-hidden bg-black border border-white/10 aspect-[16/10] flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-white/10 w-full max-w-[380px] aspect-[9/16] mx-auto flex items-center justify-center">
                 {activeShot.videoUrl ? (
                   <video
                     key={activeShot.videoUrl}

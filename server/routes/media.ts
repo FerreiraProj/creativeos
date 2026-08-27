@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { resolveFal, FAL_IMAGE_MODEL, FAL_VIDEO_MODEL } from '../fal.ts';
+import { resolveFal, extractFalErrorMessage, FAL_IMAGE_MODEL, FAL_VIDEO_MODEL } from '../fal.ts';
 
 const router = Router();
 
@@ -29,7 +29,7 @@ router.post('/character-image', async (req, res) => {
     res.json({ success: true, imageUrl });
   } catch (error: any) {
     console.error('Error generating character image:', error);
-    res.status(500).json({ success: false, error: error.message || 'Failed to generate character image' });
+    res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to generate character image') });
   }
 });
 
@@ -61,7 +61,7 @@ router.post('/upload-character-image', async (req, res) => {
     res.json({ success: true, imageUrl });
   } catch (error: any) {
     console.error('Error uploading character image:', error);
-    res.status(500).json({ success: false, error: error.message || 'Failed to upload photo' });
+    res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to upload photo') });
   }
 });
 
@@ -86,7 +86,7 @@ router.post('/shot-video/submit', async (req, res) => {
     res.json({ success: true, requestId: queued.request_id });
   } catch (error: any) {
     console.error('Error submitting shot video job:', error);
-    res.status(500).json({ success: false, error: error.message || 'Failed to submit video generation job' });
+    res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to submit video generation job') });
   }
 });
 
@@ -115,11 +115,11 @@ router.post('/shot-video/status', async (req, res) => {
       }
       res.json({ success: true, status: 'COMPLETED', videoUrl });
     } catch (resultError: any) {
-      res.json({ success: true, status: 'FAILED', error: resultError.message || 'Video generation failed' });
+      res.json({ success: true, status: 'FAILED', error: extractFalErrorMessage(resultError, 'Video generation failed') });
     }
   } catch (error: any) {
     console.error('Error polling shot video job:', error);
-    res.status(500).json({ success: false, error: error.message || 'Failed to poll video generation job' });
+    res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to poll video generation job') });
   }
 });
 

@@ -15,3 +15,17 @@ export function resolveFal(body: any): FalClient {
   if (!falApiKey) return defaultFal;
   return createFalClient({ credentials: falApiKey });
 }
+
+// Fal's ApiError (thrown by queue.submit/status/result and fal.subscribe) sets `.message` to
+// a generic string like "Unprocessable Entity" — the actual validation reason lives in
+// `.body.detail` (an array of {msg, loc, type}) and would otherwise be silently lost.
+export function extractFalErrorMessage(error: any, fallback: string): string {
+  const detail = error?.body?.detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail.map((d: any) => d?.msg || JSON.stringify(d)).join('; ');
+  }
+  if (typeof error?.body === 'string') {
+    return error.body;
+  }
+  return error?.message || fallback;
+}
