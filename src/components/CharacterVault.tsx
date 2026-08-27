@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { Project, Character, AiGatewayConfig } from '../types';
-import { generateCharacterPrompt, generateCharacterImage } from '../lib/api';
+import { generateCharacterPrompt, generateCharacterImage, uploadCharacterImage } from '../lib/api';
 
 interface CharacterVaultProps {
   project: Project;
@@ -48,6 +48,10 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
   const [aiGenerateError, setAiGenerateError] = useState<string | null>(null);
   const [cachedPrompt, setCachedPrompt] = useState<{ masterPrompt: string; negativePrompt: string } | null>(null);
   const [aiGeneratedImageUrl, setAiGeneratedImageUrl] = useState<string | null>(null);
+
+  // Attach-your-own-photo upload state
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Lightbox: click any character photo (list, detail view, AI preview) to view it full size
   const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
@@ -148,6 +152,37 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
     if (aiGeneratedImageUrl) {
       setReferenceImageUrl(aiGeneratedImageUrl);
     }
+  };
+
+  // Attach an existing photo instead of generating one. Uploaded to Fal.ai's own storage
+  // (not embedded as a data URI) so the result is a real, publicly-fetchable URL — needed
+  // later when this character is used as the reference image for shot-video generation.
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setUploadError(null);
+    setIsUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const { imageUrl } = await uploadCharacterImage({
+          fileDataUrl: reader.result as string,
+          aiGatewayConfig,
+        });
+        setReferenceImageUrl(imageUrl);
+      } catch (err: any) {
+        setUploadError(err.message || 'Failed to upload photo.');
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    };
+    reader.onerror = () => {
+      setUploadError('Failed to read the selected file.');
+      setIsUploadingPhoto(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDeleteCharacter = (id: string) => {
@@ -295,7 +330,7 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
               {/* Sample Avatar Picker */}
               <div>
                 <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1.5">
-                  Choose Photo Reference Preset (or paste custom URL below)
+                  Choose Photo Reference Preset (or attach/paste your own below)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {sampleAvatars.map((ava, i) => (
@@ -322,6 +357,39 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Attach Your Own Photo */}
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#F27D26]" />
+                    <span>Attach Your Own Photo</span>
+                  </label>
+                  <label
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                      isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                  >
+                    <RefreshCw className={`w-3 h-3 text-[#F27D26] ${isUploadingPhoto ? 'animate-spin' : ''}`} />
+                    <span>{isUploadingPhoto ? 'Uploading…' : 'Choose File'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelected}
+                      disabled={isUploadingPhoto}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-white/40">
+                  Upload an existing photo of this character instead of generating one.
+                </p>
+                {uploadError && (
+                  <p className="text-[11px] text-rose-400 bg-rose-950/30 border border-rose-500/20 rounded-lg px-2.5 py-1.5">
+                    {uploadError}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -465,13 +533,28 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                 <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
                   Reference Photo Image URL
                 </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={referenceImageUrl}
-                  onChange={(e) => setReferenceImageUrl(e.target.value)}
-                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-hidden focus:border-[#F27D26]"
-                />
+                <div className="flex items-center gap-3">
+                  {referenceImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxImage({ url: referenceImageUrl, alt: 'Reference photo preview' })}
+                      className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/10 shrink-0 group cursor-zoom-in"
+                      title="Click to enlarge"
+                    >
+                      <img src={referenceImageUrl} alt="Reference photo preview" className="w-full h-full object-cover" />
+                      <span className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition">
+                        <Eye className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition" />
+                      </span>
+                    </button>
+                  )}
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={referenceImageUrl}
+                    onChange={(e) => setReferenceImageUrl(e.target.value)}
+                    className="flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-hidden focus:border-[#F27D26]"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

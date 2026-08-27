@@ -33,6 +33,38 @@ router.post('/character-image', async (req, res) => {
   }
 });
 
+const DATA_URL_PATTERN = /^data:([^;]+);base64,(.+)$/;
+
+// Endpoint: upload a user-supplied photo (attach instead of generate). Stores it on Fal.ai's
+// own storage so the resulting URL is a real, publicly-fetchable one — required later for the
+// shot-video model, which needs to fetch the reference image itself, not just display it here.
+router.post('/upload-character-image', async (req, res) => {
+  try {
+    const { fileDataUrl } = req.body;
+    if (typeof fileDataUrl !== 'string') {
+      return res.status(400).json({ success: false, error: 'fileDataUrl is required' });
+    }
+    const match = fileDataUrl.match(DATA_URL_PATTERN);
+    if (!match) {
+      return res.status(400).json({ success: false, error: 'fileDataUrl must be a data: URL' });
+    }
+    const [, mimeType, base64Data] = match;
+    if (!mimeType.startsWith('image/')) {
+      return res.status(400).json({ success: false, error: 'Only image files are supported' });
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+    const blob = new Blob([buffer], { type: mimeType });
+
+    const fal = resolveFal(req.body);
+    const imageUrl = await fal.storage.upload(blob);
+    res.json({ success: true, imageUrl });
+  } catch (error: any) {
+    console.error('Error uploading character image:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to upload photo' });
+  }
+});
+
 // Endpoint: submit a shot-video generation job. Returns immediately with a request id —
 // video generation takes far longer than a normal HTTP request should stay open, so the
 // client polls /shot-video/status separately instead of waiting here.

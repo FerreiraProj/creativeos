@@ -46,6 +46,7 @@ app.use('/api/settings', requireAuth, settingsRouter);
 // trigger generation. /shot-video/status is polled every few seconds per in-flight job and
 // must stay outside that budget, or polling alone would exhaust it.
 app.use('/api/media/character-image', requireAuth, aiRateLimit);
+app.use('/api/media/upload-character-image', requireAuth, aiRateLimit);
 app.use('/api/media/shot-video/submit', requireAuth, aiRateLimit);
 app.use('/api/media', requireAuth, mediaRouter);
 

@@ -660,6 +660,22 @@ export async function generateCharacterImage(params: {
   return { imageUrl: data.imageUrl };
 }
 
+export async function uploadCharacterImage(params: {
+  fileDataUrl: string;
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<{ imageUrl: string }> {
+  const res = await fetch('/api/media/upload-character-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withFalGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to upload photo');
+  }
+  return { imageUrl: data.imageUrl };
+}
+
 export async function submitShotVideoGeneration(params: {
   prompt: string;
   imageUrls: string[];
