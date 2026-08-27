@@ -11,6 +11,7 @@ import {
   Clapperboard,
   RefreshCw,
   UserCheck,
+  X,
 } from 'lucide-react';
 import { Project, Character, AiGatewayConfig } from '../types';
 import { generateCharacterPrompt, generateCharacterImage } from '../lib/api';
@@ -47,6 +48,9 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
   const [aiGenerateError, setAiGenerateError] = useState<string | null>(null);
   const [cachedPrompt, setCachedPrompt] = useState<{ masterPrompt: string; negativePrompt: string } | null>(null);
   const [aiGeneratedImageUrl, setAiGeneratedImageUrl] = useState<string | null>(null);
+
+  // Lightbox: click any character photo (list, detail view, AI preview) to view it full size
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
 
   // Sample portrait avatar presets
   const sampleAvatars = [
@@ -217,11 +221,24 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={char.referenceImageUrl}
-                        alt={char.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-white/10 shrink-0"
-                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxImage({ url: char.referenceImageUrl, alt: char.name });
+                        }}
+                        className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0 group cursor-zoom-in"
+                        title="Click to enlarge"
+                      >
+                        <img
+                          src={char.referenceImageUrl}
+                          alt={char.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition">
+                          <Eye className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition" />
+                        </span>
+                      </button>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <h3 className="text-xs font-bold text-white truncate">{char.name}</h3>
@@ -405,11 +422,23 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
 
                 {aiGeneratedImageUrl && (
                   <div className="flex items-center gap-3">
-                    <img
-                      src={aiGeneratedImageUrl}
-                      alt="AI-generated character portrait"
-                      className="w-16 h-16 rounded-xl object-cover border border-[#F27D26]/40 shrink-0"
-                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLightboxImage({ url: aiGeneratedImageUrl, alt: 'AI-generated character portrait' })
+                      }
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#F27D26]/40 shrink-0 group cursor-zoom-in"
+                      title="Click to enlarge"
+                    >
+                      <img
+                        src={aiGeneratedImageUrl}
+                        alt="AI-generated character portrait"
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition">
+                        <Eye className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition" />
+                      </span>
+                    </button>
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
@@ -466,11 +495,23 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
             <div className="p-6 rounded-2xl bg-[#0F0F0F] border border-white/10 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={selectedCharacter.referenceImageUrl}
-                    alt={selectedCharacter.name}
-                    className="w-20 h-20 rounded-2xl object-cover border border-[#F27D26]/50 shadow-md shrink-0"
-                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightboxImage({ url: selectedCharacter.referenceImageUrl, alt: selectedCharacter.name })
+                    }
+                    className="relative w-20 h-20 rounded-2xl overflow-hidden border border-[#F27D26]/50 shadow-md shrink-0 group cursor-zoom-in"
+                    title="Click to enlarge"
+                  >
+                    <img
+                      src={selectedCharacter.referenceImageUrl}
+                      alt={selectedCharacter.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition">
+                      <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition" />
+                    </span>
+                  </button>
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-xl font-serif italic text-white">{selectedCharacter.name}</h2>
@@ -527,6 +568,27 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
           ) : null}
         </div>
       </div>
+
+      {/* Photo Lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={lightboxImage.url}
+            alt={lightboxImage.alt}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl border border-white/10 shadow-2xl cursor-default"
+          />
+        </div>
+      )}
     </div>
   );
 };
