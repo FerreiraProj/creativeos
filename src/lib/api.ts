@@ -200,6 +200,7 @@ export async function generateFullScript(params: {
   format?: string;
   targetDuration?: number;
   creativeObjective?: CreativeObjective;
+  defaultBackgroundEnvironment?: string;
   aiGatewayConfig?: AiGatewayConfig;
 }): Promise<GeneratedScriptResult> {
   try {

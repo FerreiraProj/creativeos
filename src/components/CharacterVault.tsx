@@ -13,7 +13,7 @@ import {
   UserCheck,
   X,
 } from 'lucide-react';
-import { Project, Character, AiGatewayConfig } from '../types';
+import { Project, Character, AiGatewayConfig, ClothingType, ClothingColor } from '../types';
 import { generateCharacterPrompt, generateCharacterImage, uploadCharacterImage } from '../lib/api';
 
 interface CharacterVaultProps {
@@ -32,8 +32,9 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
     characters[0] || null
   );
 
-  // New character state
+  // New/edited character state
   const [isCreating, setIsCreating] = useState(false);
+  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [ageGroup, setAgeGroup] = useState('');
@@ -41,6 +42,26 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
   const [speakingStyle, setSpeakingStyle] = useState('');
   const [visualTraits, setVisualTraits] = useState('');
   const [referenceImageUrl, setReferenceImageUrl] = useState('');
+
+  // Outfit — stays consistent across every shot/video for this character
+  const [clothingType, setClothingType] = useState<ClothingType | ''>('');
+  const [clothingColor, setClothingColor] = useState<ClothingColor | ''>('');
+  const [wearsSunglasses, setWearsSunglasses] = useState(false);
+
+  const CLOTHING_TYPES: ClothingType[] = ['T-Shirt', 'Camisa', 'Polo', 'Camisola', 'Hoodie', 'Sweatshirt'];
+  const CLOTHING_COLORS: ClothingColor[] = [
+    'Branco',
+    'Preto',
+    'Cinzento',
+    'Castanho Claro',
+    'Castanho Escuro',
+    'Bordeaux',
+    'Rosa Claro',
+    'Rosa Choque',
+    'Roxo',
+    'Verde Militar',
+    'Verde Oliva',
+  ];
 
   // AI-generated portrait state
   const [isWritingPrompt, setIsWritingPrompt] = useState(false);
@@ -76,12 +97,56 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
     },
   ];
 
-  const handleSaveNewCharacter = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setEditingCharacterId(null);
+    setName('');
+    setRole('');
+    setAgeGroup('');
+    setPersonality('');
+    setSpeakingStyle('');
+    setVisualTraits('');
+    setReferenceImageUrl('');
+    setClothingType('');
+    setClothingColor('');
+    setWearsSunglasses(false);
+    setCachedPrompt(null);
+    setAiGeneratedImageUrl(null);
+    setAiGenerateError(null);
+    setUploadError(null);
+  };
+
+  const handleStartCreate = () => {
+    resetForm();
+    setIsCreating(true);
+  };
+
+  const handleStartEdit = (char: Character) => {
+    setEditingCharacterId(char.id);
+    setName(char.name);
+    setRole(char.role);
+    setAgeGroup(char.ageGroup);
+    setPersonality(char.personality);
+    setSpeakingStyle(char.speakingStyle);
+    setVisualTraits(char.visualTraits);
+    setReferenceImageUrl(char.referenceImageUrl);
+    setClothingType(char.clothingType || '');
+    setClothingColor(char.clothingColor || '');
+    setWearsSunglasses(char.wearsSunglasses || false);
+    setCachedPrompt(char.generatedPrompt ? { masterPrompt: char.generatedPrompt, negativePrompt: '' } : null);
+    setAiGeneratedImageUrl(null);
+    setAiGenerateError(null);
+    setUploadError(null);
+    setIsCreating(true);
+  };
+
+  const handleSubmitCharacterForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const newChar: Character = {
-      id: 'char-' + Date.now(),
+    const existing = editingCharacterId ? characters.find((c) => c.id === editingCharacterId) : null;
+
+    const charData: Character = {
+      id: existing?.id || 'char-' + Date.now(),
       name: name.trim(),
       role: role.trim() || 'Content Creator & Brand Advocate',
       ageGroup: ageGroup.trim() || '26-32 anos',
@@ -90,26 +155,24 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
       visualTraits: visualTraits.trim() || 'Casual clean, estética moderna de secretária.',
       referenceImageUrl:
         referenceImageUrl.trim() ||
+        existing?.referenceImageUrl ||
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
-      generatedPrompt: cachedPrompt?.masterPrompt,
-      shotCount: 0,
-      createdAt: new Date().toISOString(),
+      generatedPrompt: cachedPrompt?.masterPrompt || existing?.generatedPrompt,
+      clothingType: clothingType || undefined,
+      clothingColor: clothingColor || undefined,
+      wearsSunglasses,
+      shotCount: existing?.shotCount || 0,
+      createdAt: existing?.createdAt || new Date().toISOString(),
     };
 
-    const updated = [...characters, newChar];
+    const updated = existing
+      ? characters.map((c) => (c.id === charData.id ? charData : c))
+      : [...characters, charData];
+
     onUpdateCharacters(updated);
-    setSelectedCharacter(newChar);
+    setSelectedCharacter(charData);
     setIsCreating(false);
-    setName('');
-    setRole('');
-    setAgeGroup('');
-    setPersonality('');
-    setSpeakingStyle('');
-    setVisualTraits('');
-    setReferenceImageUrl('');
-    setCachedPrompt(null);
-    setAiGeneratedImageUrl(null);
-    setAiGenerateError(null);
+    resetForm();
   };
 
   // Step 1: write a strong image-gen prompt from the form's own fields (Gemini), then
@@ -212,7 +275,7 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
         </div>
 
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={handleStartCreate}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-wider text-xs transition shadow-sm cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 stroke-[2.5] text-[#F27D26]" />
@@ -232,7 +295,7 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
               <Users className="w-8 h-8 text-white/30 mx-auto mb-2" />
               <p className="text-xs text-white/50">No digital creators created yet.</p>
               <button
-                onClick={() => setIsCreating(true)}
+                onClick={handleStartCreate}
                 className="mt-3 text-xs text-[#F27D26] hover:underline font-medium cursor-pointer"
               >
                 + Create first character
@@ -308,19 +371,22 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
         {/* Right: Detailed Character Inspector / Creation Form (Col 8) */}
         <div className="lg:col-span-8">
           {isCreating ? (
-            /* Creation Form */
+            /* Creation / Edit Form */
             <form
-              onSubmit={handleSaveNewCharacter}
+              onSubmit={handleSubmitCharacterForm}
               className="p-6 rounded-2xl bg-[#0F0F0F] border border-white/10 space-y-4"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <h3 className="text-base font-serif italic text-white flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-[#F27D26]" />
-                  <span>Create Digital Character Anchor</span>
+                  <span>{editingCharacterId ? 'Edit Digital Character Anchor' : 'Create Digital Character Anchor'}</span>
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setIsCreating(false)}
+                  onClick={() => {
+                    setIsCreating(false);
+                    resetForm();
+                  }}
                   className="text-xs text-white/40 hover:text-white cursor-pointer"
                 >
                   Cancel
@@ -460,6 +526,58 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                 />
               </div>
 
+              {/* Outfit & Styling — stays consistent across every shot/video for this character */}
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
+                <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block">
+                  Outfit & Styling (Consistent Across All Shots)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
+                      Clothing Type
+                    </label>
+                    <select
+                      value={clothingType}
+                      onChange={(e) => setClothingType(e.target.value as ClothingType | '')}
+                      className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
+                    >
+                      <option value="">No preference</option>
+                      {CLOTHING_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
+                      Clothing Color
+                    </label>
+                    <select
+                      value={clothingColor}
+                      onChange={(e) => setClothingColor(e.target.value as ClothingColor | '')}
+                      className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
+                    >
+                      <option value="">No preference</option>
+                      {CLOTHING_COLORS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer w-fit">
+                  <input
+                    type="checkbox"
+                    checked={wearsSunglasses}
+                    onChange={(e) => setWearsSunglasses(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-[#F27D26] cursor-pointer"
+                  />
+                  <span>Wears sunglasses</span>
+                </label>
+              </div>
+
               <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] uppercase tracking-widest text-[#F27D26] font-bold flex items-center gap-1.5">
@@ -560,7 +678,10 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsCreating(false)}
+                  onClick={() => {
+                    setIsCreating(false);
+                    resetForm();
+                  }}
                   className="px-4 py-2 border border-white/10 text-xs font-bold uppercase tracking-wider text-white/60 rounded-lg hover:text-white cursor-pointer"
                 >
                   Cancel
@@ -569,7 +690,7 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                   type="submit"
                   className="px-5 py-2 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-neutral-200 transition cursor-pointer"
                 >
-                  Save Character Anchor
+                  {editingCharacterId ? 'Save Changes' : 'Save Character Anchor'}
                 </button>
               </div>
             </form>
@@ -611,7 +732,13 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setIsCreating(true)}
+                    onClick={() => handleStartEdit(selectedCharacter)}
+                    className="text-xs font-bold uppercase tracking-wider text-[#F27D26] hover:text-white px-4 py-2 rounded-lg bg-[#F27D26]/10 border border-[#F27D26]/30 transition cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleStartCreate}
                     className="text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white px-4 py-2 rounded-lg bg-white/5 border border-white/10 transition cursor-pointer"
                   >
                     Create Another
@@ -635,6 +762,23 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                   <p className="text-xs text-white/80">{selectedCharacter.personality}</p>
                 </div>
               </div>
+
+              {(selectedCharacter.clothingType || selectedCharacter.clothingColor || selectedCharacter.wearsSunglasses) && (
+                <div className="p-4 rounded-xl bg-black/60 border border-white/5 space-y-1">
+                  <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold text-white">
+                    Outfit & Styling (Consistent Across Shots)
+                  </span>
+                  <p className="text-xs text-white/80">
+                    {[
+                      selectedCharacter.clothingColor,
+                      selectedCharacter.clothingType,
+                      selectedCharacter.wearsSunglasses ? 'com óculos escuros' : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </p>
+                </div>
+              )}
 
               <div className="p-4 rounded-xl bg-black/60 border border-white/5 space-y-2">
                 <span className="text-[10px] uppercase tracking-widest text-[#F27D26] font-bold">

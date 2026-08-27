@@ -185,7 +185,21 @@ export const ShotStudio: React.FC<ShotStudioProps> = ({
     if (!activeCreative || !activeShot || !character?.referenceImageUrl) return;
     setIsSubmittingVideoJob(true);
     try {
-      const prompt = `${activeShot.visualPrompt}. <IMAGE_REF_0> speaking: "${activeShot.spokenText}". Emotion: ${activeShot.characterEmotion}. Camera: ${activeShot.cameraMovement}.`;
+      // Outfit stays consistent across every shot (character-level); background/environment
+      // defaults to the creative-level setting but can be overridden per shot.
+      const outfitBits: string[] = [];
+      if (character.clothingColor || character.clothingType) {
+        outfitBits.push(`wearing a ${[character.clothingColor, character.clothingType].filter(Boolean).join(' ')}`);
+      }
+      if (character.wearsSunglasses) {
+        outfitBits.push('wearing sunglasses');
+      }
+      const outfitDescription = outfitBits.length > 0 ? ` ${character.name}, ${outfitBits.join(', ')}.` : '';
+
+      const environment = activeShot.backgroundEnvironment?.trim() || activeCreative.defaultBackgroundEnvironment?.trim();
+      const environmentDescription = environment ? ` Setting/background: ${environment}.` : '';
+
+      const prompt = `${activeShot.visualPrompt}.${outfitDescription}${environmentDescription} <IMAGE_REF_0> speaking: "${activeShot.spokenText}". Emotion: ${activeShot.characterEmotion}. Camera: ${activeShot.cameraMovement}.`;
       const { requestId } = await submitShotVideoGeneration({
         prompt,
         imageUrls: [character.referenceImageUrl],
@@ -731,6 +745,26 @@ export const ShotStudio: React.FC<ShotStudioProps> = ({
                       className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
+                    Background / Environment (This Shot Only)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      activeCreative.defaultBackgroundEnvironment
+                        ? `Default: ${activeCreative.defaultBackgroundEnvironment}`
+                        : 'Leave empty to keep the same background as the reference photo'
+                    }
+                    value={activeShot.backgroundEnvironment || ''}
+                    onChange={(e) => handleUpdateShotField('backgroundEnvironment', e.target.value)}
+                    className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-hidden focus:border-[#F27D26]"
+                  />
+                  <p className="text-[10px] text-white/40 mt-1">
+                    Overrides the creative's default background just for this shot.
+                  </p>
                 </div>
               </div>
             </div>

@@ -83,6 +83,21 @@ export interface BrandMemory {
   otherNotes: string;
 }
 
+export type ClothingType = 'T-Shirt' | 'Camisa' | 'Polo' | 'Camisola' | 'Hoodie' | 'Sweatshirt';
+
+export type ClothingColor =
+  | 'Branco'
+  | 'Preto'
+  | 'Cinzento'
+  | 'Castanho Claro'
+  | 'Castanho Escuro'
+  | 'Bordeaux'
+  | 'Rosa Claro'
+  | 'Rosa Choque'
+  | 'Roxo'
+  | 'Verde Militar'
+  | 'Verde Oliva';
+
 export interface Character {
   id: string;
   name: string;
@@ -95,6 +110,10 @@ export interface Character {
   generatedPrompt?: string;
   shotCount?: number;
   createdAt: string;
+  // Outfit stays consistent across every shot/video for this character.
+  clothingType?: ClothingType;
+  clothingColor?: ClothingColor;
+  wearsSunglasses?: boolean;
 }
 
 export interface Shot {
@@ -112,6 +131,8 @@ export interface Shot {
   audioUrl?: string;
   videoJobId?: string; // in-flight Fal.ai request_id while status === 'generating'
   status: 'draft' | 'generating' | 'ready' | 'needs_redo';
+  // Overrides Creative.defaultBackgroundEnvironment for this shot only, when set.
+  backgroundEnvironment?: string;
 }
 
 export interface PerformanceData {
@@ -160,6 +181,9 @@ export interface Creative {
   cta: string;
   fullScriptText?: string;
   shots: Shot[];
+  // Shared background/environment description applied to every shot unless a shot sets
+  // its own Shot.backgroundEnvironment override.
+  defaultBackgroundEnvironment?: string;
   targetDuration: number;
   finalVideoUrl?: string;
   previewImageUrl?: string;

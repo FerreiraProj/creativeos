@@ -117,7 +117,7 @@ Return valid JSON with an array of objects.`;
 // Endpoint: AI Script Writer (Multi-Shot Breakdown)
 router.post('/script', async (req, res) => {
   try {
-    const { brandMemory, creativeMemory, idea, character, channel, format, targetDuration = 25, creativeObjective } = req.body;
+    const { brandMemory, creativeMemory, idea, character, channel, format, targetDuration = 25, creativeObjective, defaultBackgroundEnvironment } = req.body;
     const { ai, model } = resolveAi(req.body);
 
     let scriptObjectiveGuide = '';
@@ -157,6 +157,10 @@ ${JSON.stringify(idea, null, 2)}
 
 Character Profile:
 ${character ? JSON.stringify(character, null, 2) : 'Default authentic creator'}
+${character?.clothingType || character?.clothingColor || character?.wearsSunglasses ? `\nIMPORTANT: This character's outfit (clothing type/color, sunglasses if set above) MUST be described identically and consistently in every single shot's visualPrompt — never change or omit it between shots.` : ''}
+
+Background/Environment:
+${defaultBackgroundEnvironment ? `${defaultBackgroundEnvironment} — keep this same setting consistent across every shot's visualPrompt unless the idea genuinely requires a scene change.` : 'Not specified — keep whatever background/setting you choose consistent across all shots.'}
 
 Target Duration: ~${targetDuration} seconds (split into ~5-second independent shots).
 Language: ${brandMemory?.language || 'Portuguese (Portugal / International) or match project prompt'}

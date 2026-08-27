@@ -119,6 +119,9 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
     project.characters?.[0]?.id || ''
   );
   const [targetDuration, setTargetDuration] = useState<number>(25);
+  // Shared background/environment for every shot in this creative (per-shot override lives
+  // in Shot Studio) — keeps the setting visually consistent across the whole video by default.
+  const [defaultBackgroundEnvironment, setDefaultBackgroundEnvironment] = useState<string>('');
 
   // AI Output states
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
@@ -191,6 +194,7 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
         format: selectedFormat,
         creativeObjective: selectedObjective,
         targetDuration,
+        defaultBackgroundEnvironment: defaultBackgroundEnvironment.trim() || undefined,
         aiGatewayConfig,
       });
       setGeneratedScript(script);
@@ -336,6 +340,7 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
         generatedScript?.shots?.map((s) => `[Shot ${s.shotNumber}] ${s.spokenText}`).join('\n\n') || '',
       cta: generatedScript?.mainCta || 'Visit link to learn more.',
       targetDuration,
+      defaultBackgroundEnvironment: defaultBackgroundEnvironment.trim() || undefined,
       tags: [
         selectedFormat,
         selectedChannel,
@@ -685,6 +690,24 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Default Background / Environment — shared across all shots unless a shot
+                overrides it individually in Shot Studio */}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
+                Ambiente / Fundo Padrão (Opcional)
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Ex: Secretária minimalista com luz natural de janela. Deixa em branco para o mesmo fundo da foto de referência."
+                value={defaultBackgroundEnvironment}
+                onChange={(e) => setDefaultBackgroundEnvironment(e.target.value)}
+                className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-hidden focus:border-[#F27D26]"
+              />
+              <p className="text-[10px] text-white/40 mt-1">
+                Mantém-se igual em todos os shots. Podes definir um fundo diferente para um shot específico no Shot Studio.
+              </p>
             </div>
 
             {/* Generate Action Button */}
