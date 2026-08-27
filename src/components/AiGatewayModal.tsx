@@ -93,7 +93,7 @@ export const AiGatewayModal: React.FC<AiGatewayModalProps> = ({
                   onChange={(e) => setLocalConfig({ ...localConfig, textModel: e.target.value })}
                   className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
                 >
-                  <option value="gemini-3.7-flash">Google Gemini 3.7 Flash (Recomendado / Ultra-rápido)</option>
+                  <option value="gemini-3.6-flash">Google Gemini 3.6 Flash (Recomendado / Ultra-rápido)</option>
                   <option value="gemini-2.5-pro">Google Gemini 2.5 Pro (Estratégia Profunda)</option>
                   <option value="gpt-4o">OpenAI GPT-4o (Geração via OpenAI)</option>
                   <option value="gpt-4o-mini">OpenAI GPT-4o Mini (Económico)</option>

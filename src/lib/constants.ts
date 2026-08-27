@@ -577,7 +577,7 @@ export const SAMPLE_NOOTRION_PROJECT: Project = {
     },
   ],
   aiConfig: {
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-3.6-flash',
     falApiKey: '',
     openaiApiKey: '',
     preferredVideoEngine: 'gemini_omni',

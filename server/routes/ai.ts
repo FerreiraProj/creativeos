@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 const router = Router();
 
-const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_TEXT_MODEL = 'gemini-3.6-flash';
 
 // Initialize GoogleGenAI SDK server-side (fallback client using the server's own key).
 const defaultAi = new GoogleGenAI({

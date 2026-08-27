@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 
 const DEFAULT_AI_GATEWAY_CONFIG: AiGatewayConfig = {
-  textModel: 'gemini-2.5-flash',
+  textModel: 'gemini-3.6-flash',
   videoModel: 'gemini-omni',
   audioModel: 'gemini-tts',
   byokKeys: { geminiApiKey: '', falApiKey: '', openaiApiKey: '' },
