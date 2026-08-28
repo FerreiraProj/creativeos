@@ -63,6 +63,7 @@ export function buildNewProject(name: string, description: string, codePrefix?: 
       creditsAvailable: 2500,
       creditsUsed: 0,
     },
+    blogArticles: [],
   };
 }
 
@@ -89,5 +90,6 @@ export function buildDuplicateProject(source: any, newName: string, newPrefix: s
       ...source.aiConfig,
       creditsUsed: 0,
     },
+    blogArticles: [],
   };
 }

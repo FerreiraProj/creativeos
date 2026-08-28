@@ -24,9 +24,13 @@ export async function ensureSchema(): Promise<void> {
       creatives       JSONB NOT NULL DEFAULT '[]',
       custom_recipes  JSONB NOT NULL DEFAULT '[]',
       insights        JSONB NOT NULL DEFAULT '[]',
-      ai_config       JSONB NOT NULL
+      ai_config       JSONB NOT NULL,
+      blog_articles   JSONB NOT NULL DEFAULT '[]'
     );
   `);
+
+  // Additive migration for databases created before blog_articles existed.
+  await pool.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS blog_articles JSONB NOT NULL DEFAULT '[]';`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS app_settings (

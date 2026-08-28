@@ -1,4 +1,4 @@
-import { BrandMemory, CreativeMemoryItem, Character, Project, Shot, Creative, CreativeObjective, AiGatewayConfig, ClothingType, ClothingColor } from '../types';
+import { BrandMemory, CreativeMemoryItem, Character, Project, Shot, Creative, CreativeObjective, AiGatewayConfig, ClothingType, ClothingColor, BlogArticle, BlogArticleImages, BlogArticleTitleOption } from '../types';
 
 // Merges the user's AI Gateway settings (chosen text model + optional BYOK Gemini key)
 // into the request body sent to the server, which prefers them over its own defaults.
@@ -713,4 +713,107 @@ export async function pollShotVideoGeneration(params: {
     throw new Error(data.error || 'Failed to poll video generation job');
   }
   return { status: data.status, videoUrl: data.videoUrl, error: data.error };
+}
+
+// --- Blog Article Generator ---
+// No mock fallback (same rationale as the media-generation functions above): there's no
+// meaningful fake article/idea to substitute, so these throw on failure.
+
+export interface BlogIdeaResult {
+  title: string;
+  angle: string;
+  summary: string;
+  targetAudience: string;
+  whyItWorks: string;
+}
+
+export async function generateBlogIdeas(params: {
+  brandMemory: BrandMemory;
+  blogArticles: BlogArticle[];
+  topic?: string;
+  count?: number;
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<BlogIdeaResult[]> {
+  const res = await fetch('/api/blog/ideas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to generate blog ideas');
+  }
+  return data.ideas;
+}
+
+export async function generateBlogTitles(params: {
+  brandMemory: BrandMemory;
+  ideaSummary: string;
+  blogArticles: BlogArticle[];
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<BlogArticleTitleOption[]> {
+  const res = await fetch('/api/blog/titles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to generate blog titles');
+  }
+  return data.titles;
+}
+
+export async function generateBlogArticleBody(params: {
+  brandMemory: BrandMemory;
+  title: string;
+  ideaSummary: string;
+  blogArticles: BlogArticle[];
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<{ bodyMarkdown: string }> {
+  const res = await fetch('/api/blog/article', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to generate blog article');
+  }
+  return data.article;
+}
+
+export async function editBlogArticleBody(params: {
+  brandMemory: BrandMemory;
+  title: string;
+  currentBodyMarkdown: string;
+  instruction: string;
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<{ bodyMarkdown: string }> {
+  const res = await fetch('/api/blog/edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to edit blog article');
+  }
+  return data.article;
+}
+
+export async function generateBlogArticleImages(params: {
+  prompt: string;
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<{ images: BlogArticleImages }> {
+  const res = await fetch('/api/media/blog-article-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withFalGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to generate blog article images');
+  }
+  return { images: data.images };
 }

@@ -20,20 +20,21 @@ function rowToProject(row: any) {
     customRecipes: row.custom_recipes,
     insights: row.insights,
     aiConfig: row.ai_config,
+    blogArticles: row.blog_articles,
   };
 }
 
 const SELECT_COLUMNS = `
   id, name, description, code_prefix, created_at, updated_at,
-  brand_memory, creative_memory, characters, creatives, custom_recipes, insights, ai_config
+  brand_memory, creative_memory, characters, creatives, custom_recipes, insights, ai_config, blog_articles
 `;
 
 async function upsertProject(p: any) {
   const result = await pool.query(
     `INSERT INTO projects (
        id, name, description, code_prefix, created_at, updated_at,
-       brand_memory, creative_memory, characters, creatives, custom_recipes, insights, ai_config
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       brand_memory, creative_memory, characters, creatives, custom_recipes, insights, ai_config, blog_articles
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      ON CONFLICT (id) DO UPDATE SET
        name = EXCLUDED.name,
        description = EXCLUDED.description,
@@ -45,7 +46,8 @@ async function upsertProject(p: any) {
        creatives = EXCLUDED.creatives,
        custom_recipes = EXCLUDED.custom_recipes,
        insights = EXCLUDED.insights,
-       ai_config = EXCLUDED.ai_config
+       ai_config = EXCLUDED.ai_config,
+       blog_articles = EXCLUDED.blog_articles
      RETURNING ${SELECT_COLUMNS}`,
     [
       p.id,
@@ -61,6 +63,7 @@ async function upsertProject(p: any) {
       JSON.stringify(p.customRecipes ?? []),
       JSON.stringify(p.insights ?? []),
       JSON.stringify(p.aiConfig),
+      JSON.stringify(p.blogArticles ?? []),
     ]
   );
   return rowToProject(result.rows[0]);

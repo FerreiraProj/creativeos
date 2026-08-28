@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import sharp from 'sharp';
 import { resolveFal, extractFalErrorMessage, FAL_IMAGE_MODEL, FAL_VIDEO_MODEL } from '../fal.ts';
 
 const router = Router();
@@ -120,6 +121,74 @@ router.post('/shot-video/status', async (req, res) => {
   } catch (error: any) {
     console.error('Error polling shot video job:', error);
     res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to poll video generation job') });
+  }
+});
+
+const BLOG_IMAGE_CROPS: Record<string, { width: number; height: number }> = {
+  instagramSquareUrl: { width: 1080, height: 1080 }, // also used for Facebook's square feed option
+  instagramPortraitUrl: { width: 1080, height: 1350 },
+  instagramStoryUrl: { width: 1080, height: 1920 },
+  facebookUrl: { width: 1200, height: 630 },
+  linkedinUrl: { width: 1200, height: 627 },
+  twitterUrl: { width: 1600, height: 900 },
+};
+
+// The true minimum the master must be for every crop above to work via crop-only (never
+// upscaling) — the widest crop's width, and the tallest crop's height.
+const MIN_MASTER_WIDTH = Math.max(...Object.values(BLOG_IMAGE_CROPS).map((c) => c.width));
+const MIN_MASTER_HEIGHT = Math.max(...Object.values(BLOG_IMAGE_CROPS).map((c) => c.height));
+
+// Requested master size: fal-ai/flux-1/schnell does NOT reliably honor arbitrary custom
+// image_size values — live testing showed a naive "9:16 at 1632px wide" request (1632x2901)
+// silently gets clamped, and other moderately-tall requests (e.g. 1600x1920) can fall back to
+// a completely different, smaller, near-square shape instead of erroring. 1632x2048 was the
+// one size confirmed to be honored exactly, consistently, across multiple different prompts —
+// use that literal value rather than a computed one. It still comfortably covers every crop
+// (MIN_MASTER_WIDTH=1600, MIN_MASTER_HEIGHT=1920). The runtime check below validates the
+// ACTUAL returned size against the true minimums regardless, in case this ever changes.
+const MASTER_IMAGE_WIDTH = 1632;
+const MASTER_IMAGE_HEIGHT = 2048;
+
+// Endpoint: generate one blog article "hero" image, then crop it server-side into every
+// target social-format size (never re-generating or upscaling per format).
+router.post('/blog-article-image', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ success: false, error: 'prompt is required' });
+    }
+    const fal = resolveFal(req.body);
+
+    const master = await fal.subscribe(FAL_IMAGE_MODEL, {
+      input: {
+        prompt,
+        image_size: { width: MASTER_IMAGE_WIDTH, height: MASTER_IMAGE_HEIGHT },
+      },
+    });
+    const masterUrl = master.data?.images?.[0]?.url;
+    if (!masterUrl) {
+      throw new Error('Fal.ai did not return a master image');
+    }
+
+    const masterBytes = Buffer.from(await (await fetch(masterUrl)).arrayBuffer());
+    const meta = await sharp(masterBytes).metadata();
+    if (!meta.width || !meta.height || meta.width < MIN_MASTER_WIDTH || meta.height < MIN_MASTER_HEIGHT) {
+      throw new Error(`Master image too small for crop-only sizing: got ${meta.width}x${meta.height}, need at least ${MIN_MASTER_WIDTH}x${MIN_MASTER_HEIGHT}`);
+    }
+
+    const images: Record<string, string> = { masterUrl };
+    for (const [key, size] of Object.entries(BLOG_IMAGE_CROPS)) {
+      const cropped = await sharp(masterBytes)
+        .resize(size.width, size.height, { fit: 'cover', position: 'centre' })
+        .jpeg({ quality: 92 })
+        .toBuffer();
+      images[key] = await fal.storage.upload(new Blob([cropped], { type: 'image/jpeg' }));
+    }
+
+    res.json({ success: true, images });
+  } catch (error: any) {
+    console.error('Error generating blog article images:', error);
+    res.status(500).json({ success: false, error: extractFalErrorMessage(error, 'Failed to generate blog article images') });
   }
 });
 

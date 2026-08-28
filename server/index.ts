@@ -9,6 +9,7 @@ import projectsRouter from './routes/projects.ts';
 import settingsRouter from './routes/settings.ts';
 import authRouter from './routes/auth.ts';
 import mediaRouter from './routes/media.ts';
+import blogRouter from './routes/blog.ts';
 import { ensureSchema } from './db.ts';
 import { sessionMiddleware, requireAuth } from './auth.ts';
 
@@ -39,6 +40,7 @@ const loginRateLimit = rateLimit({ windowMs: 60 * 1000, limit: 10, standardHeade
 app.use('/api/auth/login', loginRateLimit);
 app.use('/api/auth', authRouter);
 app.use('/api/ai', requireAuth, aiRateLimit, aiRouter);
+app.use('/api/blog', requireAuth, aiRateLimit, blogRouter);
 app.use('/api/projects', requireAuth, projectsRouter);
 app.use('/api/settings', requireAuth, settingsRouter);
 
@@ -47,6 +49,7 @@ app.use('/api/settings', requireAuth, settingsRouter);
 // must stay outside that budget, or polling alone would exhaust it.
 app.use('/api/media/character-image', requireAuth, aiRateLimit);
 app.use('/api/media/upload-character-image', requireAuth, aiRateLimit);
+app.use('/api/media/blog-article-image', requireAuth, aiRateLimit);
 app.use('/api/media/shot-video/submit', requireAuth, aiRateLimit);
 app.use('/api/media', requireAuth, mediaRouter);
 

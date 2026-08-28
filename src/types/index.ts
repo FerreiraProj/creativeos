@@ -259,6 +259,36 @@ export interface AIProviderConfig {
   creditsUsed: number;
 }
 
+export interface BlogArticleImages {
+  masterUrl: string;
+  instagramSquareUrl: string; // also used for Facebook's square feed option
+  instagramPortraitUrl: string;
+  instagramStoryUrl: string;
+  facebookUrl: string;
+  linkedinUrl: string;
+  twitterUrl: string;
+}
+
+export interface BlogArticleTitleOption {
+  title: string;
+  rationale?: string;
+}
+
+export type BlogArticleStatus = 'idea' | 'title_selection' | 'in_review' | 'ready';
+
+export interface BlogArticle {
+  id: string;
+  status: BlogArticleStatus;
+  createdAt: string;
+  updatedAt: string;
+  ideaSource: 'ai' | 'manual';
+  ideaSummary: string;
+  titleOptions: BlogArticleTitleOption[];
+  title: string;
+  bodyMarkdown: string;
+  images?: BlogArticleImages;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -273,4 +303,5 @@ export interface Project {
   customRecipes: Recipe[];
   insights: AIInsightReport[];
   aiConfig: AIProviderConfig;
+  blogArticles: BlogArticle[];
 }

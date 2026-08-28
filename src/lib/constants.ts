@@ -585,4 +585,5 @@ export const SAMPLE_NOOTRION_PROJECT: Project = {
     creditsAvailable: 2500,
     creditsUsed: 380,
   },
+  blogArticles: [],
 };

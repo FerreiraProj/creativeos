@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Layers,
   Zap,
+  Newspaper,
 } from 'lucide-react';
 import { Project } from '../types';
 
@@ -23,7 +24,8 @@ export type ActiveTab =
   | 'characters'
   | 'recipes'
   | 'library'
-  | 'intelligence';
+  | 'intelligence'
+  | 'blog';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -51,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'brand-memory', label: 'Brand Memory', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'characters', label: 'Characters', icon: <Users className="w-4 h-4" /> },
     { id: 'recipes', label: 'Recipes', icon: <Layers className="w-4 h-4" /> },
+    { id: 'blog', label: 'Blog', icon: <Newspaper className="w-4 h-4" /> },
     { id: 'library', label: 'Library', icon: <Film className="w-4 h-4" /> },
     { id: 'intelligence', label: 'Intelligence', icon: <BrainCircuit className="w-4 h-4" /> },
   ];

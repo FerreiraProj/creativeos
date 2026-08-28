@@ -7,6 +7,7 @@ import { CreativePipelineKanban } from './components/CreativePipelineKanban';
 import { CreativeStudio } from './components/CreativeStudio';
 import { ShotStudio } from './components/ShotStudio';
 import { CharacterVault } from './components/CharacterVault';
+import { BlogStudio } from './components/BlogStudio';
 import { RecipesView } from './components/RecipesView';
 import { CreativeLibrary } from './components/CreativeLibrary';
 import { PerformanceIntelligenceView } from './components/PerformanceIntelligenceView';
@@ -23,6 +24,7 @@ import {
   CreativePipelineStatus,
   AiGatewayConfig,
   CreativeMemoryItem,
+  BlogArticle,
 } from './types';
 import {
   getStoredProjects,
@@ -196,6 +198,11 @@ export function App() {
   const handleUpdateCharacters = (characters: Character[]) => {
     if (!activeProject) return;
     updateProject({ ...activeProject, characters });
+  };
+
+  const handleUpdateBlogArticles = (blogArticles: BlogArticle[]) => {
+    if (!activeProject) return;
+    updateProject({ ...activeProject, blogArticles });
   };
 
   const handleUpdateCustomRecipes = (customRecipes: Recipe[]) => {
@@ -394,6 +401,14 @@ export function App() {
                 project={activeProject}
                 aiGatewayConfig={aiGatewayConfig}
                 onUpdateCharacters={handleUpdateCharacters}
+              />
+            )}
+
+            {activeTab === 'blog' && (
+              <BlogStudio
+                project={activeProject}
+                aiGatewayConfig={aiGatewayConfig}
+                onUpdateBlogArticles={handleUpdateBlogArticles}
               />
             )}
 
