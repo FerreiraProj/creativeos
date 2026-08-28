@@ -770,7 +770,7 @@ export async function generateBlogArticleBody(params: {
   ideaSummary: string;
   blogArticles: BlogArticle[];
   aiGatewayConfig?: AiGatewayConfig;
-}): Promise<{ bodyMarkdown: string }> {
+}): Promise<{ bodyMarkdown: string; excerpt: string }> {
   const res = await fetch('/api/blog/article', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -781,6 +781,24 @@ export async function generateBlogArticleBody(params: {
     throw new Error(data.error || 'Failed to generate blog article');
   }
   return data.article;
+}
+
+export async function generateBlogArticleExcerpt(params: {
+  brandMemory: BrandMemory;
+  title: string;
+  bodyMarkdown: string;
+  aiGatewayConfig?: AiGatewayConfig;
+}): Promise<{ excerpt: string }> {
+  const res = await fetch('/api/blog/excerpt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(withGatewayFields(params)),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to generate blog excerpt');
+  }
+  return { excerpt: data.excerpt };
 }
 
 export async function editBlogArticleBody(params: {

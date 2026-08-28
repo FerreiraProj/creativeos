@@ -286,6 +286,7 @@ export interface BlogArticle {
   titleOptions: BlogArticleTitleOption[];
   title: string;
   bodyMarkdown: string;
+  excerpt: string; // short plain-text summary for blog listing/homepage previews (e.g. Shopify's "Excerpt" field)
   images?: BlogArticleImages;
 }
 

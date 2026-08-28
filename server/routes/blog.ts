@@ -139,8 +139,11 @@ ${pastArticlesContext(blogArticles)}
 
 Write the full article body in clean Markdown (headings with #/##, short paragraphs, bullet lists where useful — no raw HTML). Structure it with a strong opening hook, clear sections, and a closing takeaway. Aim for genuine value and readability, not filler.
 
-Return JSON with a single field:
-- bodyMarkdown (the full article as a Markdown string)`;
+Also write a short excerpt: a plain-text (no Markdown, no headings), 1-2 sentence summary of the article, roughly 150-200 characters. This is used as the blog post's preview summary on listing/homepage pages (e.g. Shopify's blog "Excerpt" field), so it must work as a standalone teaser, not just the article's opening line.
+
+Return JSON with two fields:
+- bodyMarkdown (the full article as a Markdown string)
+- excerpt (the short plain-text summary described above)`;
 
     const response = await ai.models.generateContent({
       model,
@@ -151,8 +154,9 @@ Return JSON with a single field:
           type: Type.OBJECT,
           properties: {
             bodyMarkdown: { type: Type.STRING },
+            excerpt: { type: Type.STRING },
           },
-          required: ['bodyMarkdown'],
+          required: ['bodyMarkdown', 'excerpt'],
         },
       },
     });
@@ -162,6 +166,50 @@ Return JSON with a single field:
   } catch (error: any) {
     console.error('Error generating blog article:', error);
     res.status(500).json({ success: false, error: error.message || 'Failed to generate blog article' });
+  }
+});
+
+// Endpoint: (re)generate just the short listing/homepage excerpt for an already-written
+// article — used after the body has been edited and the excerpt has gone stale.
+router.post('/excerpt', async (req, res) => {
+  try {
+    const { brandMemory, title, bodyMarkdown } = req.body;
+    const { ai, model } = resolveAi(req.body);
+
+    const prompt = `You are a premier editor for brand blogs, skilled at writing short preview summaries.
+Brand Context:
+${JSON.stringify(brandMemory, null, 2)}
+
+Title: ${title}
+
+Full Article (Markdown):
+${bodyMarkdown}
+
+Write a short excerpt: a plain-text (no Markdown, no headings), 1-2 sentence summary of the article, roughly 150-200 characters. This is used as the blog post's preview summary on listing/homepage pages (e.g. Shopify's blog "Excerpt" field), so it must work as a standalone teaser, not just the article's opening line.
+
+Return JSON with a single field:
+- excerpt (the short plain-text summary described above)`;
+
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            excerpt: { type: Type.STRING },
+          },
+          required: ['excerpt'],
+        },
+      },
+    });
+
+    const text = response.text || '{}';
+    res.json({ success: true, ...JSON.parse(text) });
+  } catch (error: any) {
+    console.error('Error generating blog excerpt:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate blog excerpt' });
   }
 });
 

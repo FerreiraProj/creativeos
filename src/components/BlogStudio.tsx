@@ -21,6 +21,7 @@ import {
   generateBlogIdeas,
   generateBlogTitles,
   generateBlogArticleBody,
+  generateBlogArticleExcerpt,
   editBlogArticleBody,
   generateBlogArticleImages,
   BlogIdeaResult,
@@ -81,7 +82,11 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
   const [isChoosingTitle, setIsChoosingTitle] = useState(false);
   const [isRegeneratingTitles, setIsRegeneratingTitles] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedTitle, setCopiedTitle] = useState(false);
+  const [copiedBody, setCopiedBody] = useState(false);
+  const [copiedExcerpt, setCopiedExcerpt] = useState(false);
+  const [isRegeneratingExcerpt, setIsRegeneratingExcerpt] = useState(false);
+  const [excerptError, setExcerptError] = useState<string | null>(null);
   const [editInstruction, setEditInstruction] = useState('');
   const [isApplyingEdit, setIsApplyingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -91,9 +96,12 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
   const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
 
   useEffect(() => {
-    setCopied(false);
+    setCopiedTitle(false);
+    setCopiedBody(false);
+    setCopiedExcerpt(false);
     setEditInstruction('');
     setEditError(null);
+    setExcerptError(null);
     setImagesError(null);
     setTitleError(null);
   }, [selectedId]);
@@ -157,6 +165,7 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
         titleOptions,
         title: '',
         bodyMarkdown: '',
+        excerpt: '',
       };
       onUpdateBlogArticles([newArticle, ...articles]);
       setSelectedId(newArticle.id);
@@ -193,14 +202,14 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
     setIsChoosingTitle(true);
     setTitleError(null);
     try {
-      const { bodyMarkdown } = await generateBlogArticleBody({
+      const { bodyMarkdown, excerpt } = await generateBlogArticleBody({
         brandMemory: project.brandMemory,
         title,
         ideaSummary: selectedArticle.ideaSummary,
         blogArticles: articles,
         aiGatewayConfig,
       });
-      updateArticle(selectedArticle.id, { title, bodyMarkdown, status: 'in_review' });
+      updateArticle(selectedArticle.id, { title, bodyMarkdown, excerpt, status: 'in_review' });
     } catch (err: any) {
       setTitleError(err.message || 'Failed to generate the article.');
     } finally {
@@ -208,11 +217,44 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
     }
   };
 
+  const handleCopyTitle = () => {
+    if (!selectedArticle) return;
+    navigator.clipboard.writeText(selectedArticle.title);
+    setCopiedTitle(true);
+    setTimeout(() => setCopiedTitle(false), 2000);
+  };
+
   const handleCopyBody = () => {
     if (!selectedArticle) return;
     navigator.clipboard.writeText(selectedArticle.bodyMarkdown);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedBody(true);
+    setTimeout(() => setCopiedBody(false), 2000);
+  };
+
+  const handleCopyExcerpt = () => {
+    if (!selectedArticle) return;
+    navigator.clipboard.writeText(selectedArticle.excerpt);
+    setCopiedExcerpt(true);
+    setTimeout(() => setCopiedExcerpt(false), 2000);
+  };
+
+  const handleRegenerateExcerpt = async () => {
+    if (!selectedArticle) return;
+    setIsRegeneratingExcerpt(true);
+    setExcerptError(null);
+    try {
+      const { excerpt } = await generateBlogArticleExcerpt({
+        brandMemory: project.brandMemory,
+        title: selectedArticle.title,
+        bodyMarkdown: selectedArticle.bodyMarkdown,
+        aiGatewayConfig,
+      });
+      updateArticle(selectedArticle.id, { excerpt });
+    } catch (err: any) {
+      setExcerptError(err.message || 'Failed to regenerate the excerpt.');
+    } finally {
+      setIsRegeneratingExcerpt(false);
+    }
   };
 
   const handleApplyEdit = async () => {
@@ -524,21 +566,30 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
               {(selectedArticle.status === 'in_review' || selectedArticle.status === 'ready') && (
                 <div className="p-6 rounded-2xl bg-[#0F0F0F] border border-white/10 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
-                    <div className="min-w-0">
-                      <h2 className="text-lg font-serif italic text-white truncate">{selectedArticle.title}</h2>
-                      <span
-                        className={`inline-block mt-1 text-[9px] font-mono font-medium px-2 py-0.5 rounded border ${STATUS_BADGE[selectedArticle.status].className}`}
+                    <div className="min-w-0 flex items-start gap-2">
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-serif italic text-white truncate">{selectedArticle.title}</h2>
+                        <span
+                          className={`inline-block mt-1 text-[9px] font-mono font-medium px-2 py-0.5 rounded border ${STATUS_BADGE[selectedArticle.status].className}`}
+                        >
+                          {STATUS_BADGE[selectedArticle.status].label}
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleCopyTitle}
+                        className="shrink-0 mt-0.5 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white transition cursor-pointer"
+                        title="Copy title"
                       >
-                        {STATUS_BADGE[selectedArticle.status].label}
-                      </span>
+                        {copiedTitle ? <Check className="w-3.5 h-3.5 text-[#F27D26]" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={handleCopyBody}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-[11px] font-bold uppercase tracking-wider transition cursor-pointer"
                       >
-                        {copied ? <Check className="w-3.5 h-3.5 text-[#F27D26]" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copied ? 'Copied' : 'Copy Text'}</span>
+                        {copiedBody ? <Check className="w-3.5 h-3.5 text-[#F27D26]" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedBody ? 'Copied' : 'Copy Text'}</span>
                       </button>
                       <button
                         onClick={handleToggleReady}
@@ -551,6 +602,46 @@ export const BlogStudio: React.FC<BlogStudioProps> = ({ project, aiGatewayConfig
                         {selectedArticle.status === 'ready' ? 'Reopen for Review' : 'Mark as Ready'}
                       </button>
                     </div>
+                  </div>
+
+                  {/* Excerpt: short listing/homepage summary (e.g. Shopify's blog "Excerpt" field) */}
+                  <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[10px] uppercase tracking-widest text-[#F27D26] font-bold">
+                        Excerpt / Resumo (Blog Listing Summary)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleRegenerateExcerpt}
+                          disabled={isRegeneratingExcerpt}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold uppercase bg-white/10 hover:bg-white/20 text-white transition cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3 h-3 text-[#F27D26] ${isRegeneratingExcerpt ? 'animate-spin' : ''}`} />
+                          <span>{isRegeneratingExcerpt ? 'Regenerating…' : 'Regenerate'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCopyExcerpt}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition cursor-pointer"
+                        >
+                          {copiedExcerpt ? <Check className="w-3 h-3 text-[#F27D26]" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedExcerpt ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      rows={3}
+                      placeholder="Short 1-2 sentence summary shown on the blog homepage/index (e.g. Shopify's Excerpt field)."
+                      value={selectedArticle.excerpt}
+                      onChange={(e) => updateArticle(selectedArticle.id, { excerpt: e.target.value })}
+                      className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
+                    />
+                    {excerptError && (
+                      <p className="text-[11px] text-rose-400 bg-rose-950/30 border border-rose-500/20 rounded-lg px-2.5 py-1.5">
+                        {excerptError}
+                      </p>
+                    )}
                   </div>
 
                   <textarea
