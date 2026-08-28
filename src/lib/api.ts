@@ -1,4 +1,4 @@
-import { BrandMemory, CreativeMemoryItem, Character, Project, Shot, Creative, CreativeObjective, AiGatewayConfig } from '../types';
+import { BrandMemory, CreativeMemoryItem, Character, Project, Shot, Creative, CreativeObjective, AiGatewayConfig, ClothingType, ClothingColor } from '../types';
 
 // Merges the user's AI Gateway settings (chosen text model + optional BYOK Gemini key)
 // into the request body sent to the server, which prefers them over its own defaults.
@@ -201,6 +201,9 @@ export async function generateFullScript(params: {
   targetDuration?: number;
   creativeObjective?: CreativeObjective;
   defaultBackgroundEnvironment?: string;
+  clothingType?: ClothingType;
+  clothingColor?: ClothingColor;
+  wearsSunglasses?: boolean;
   aiGatewayConfig?: AiGatewayConfig;
 }): Promise<GeneratedScriptResult> {
   try {

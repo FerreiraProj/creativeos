@@ -13,7 +13,7 @@ import {
   UserCheck,
   X,
 } from 'lucide-react';
-import { Project, Character, AiGatewayConfig, ClothingType, ClothingColor } from '../types';
+import { Project, Character, AiGatewayConfig } from '../types';
 import { generateCharacterPrompt, generateCharacterImage, uploadCharacterImage } from '../lib/api';
 
 interface CharacterVaultProps {
@@ -42,26 +42,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
   const [speakingStyle, setSpeakingStyle] = useState('');
   const [visualTraits, setVisualTraits] = useState('');
   const [referenceImageUrl, setReferenceImageUrl] = useState('');
-
-  // Outfit — stays consistent across every shot/video for this character
-  const [clothingType, setClothingType] = useState<ClothingType | ''>('');
-  const [clothingColor, setClothingColor] = useState<ClothingColor | ''>('');
-  const [wearsSunglasses, setWearsSunglasses] = useState(false);
-
-  const CLOTHING_TYPES: ClothingType[] = ['T-Shirt', 'Camisa', 'Polo', 'Camisola', 'Hoodie', 'Sweatshirt'];
-  const CLOTHING_COLORS: ClothingColor[] = [
-    'Branco',
-    'Preto',
-    'Cinzento',
-    'Castanho Claro',
-    'Castanho Escuro',
-    'Bordeaux',
-    'Rosa Claro',
-    'Rosa Choque',
-    'Roxo',
-    'Verde Militar',
-    'Verde Oliva',
-  ];
 
   // AI-generated portrait state
   const [isWritingPrompt, setIsWritingPrompt] = useState(false);
@@ -106,9 +86,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
     setSpeakingStyle('');
     setVisualTraits('');
     setReferenceImageUrl('');
-    setClothingType('');
-    setClothingColor('');
-    setWearsSunglasses(false);
     setCachedPrompt(null);
     setAiGeneratedImageUrl(null);
     setAiGenerateError(null);
@@ -129,9 +106,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
     setSpeakingStyle(char.speakingStyle);
     setVisualTraits(char.visualTraits);
     setReferenceImageUrl(char.referenceImageUrl);
-    setClothingType(char.clothingType || '');
-    setClothingColor(char.clothingColor || '');
-    setWearsSunglasses(char.wearsSunglasses || false);
     setCachedPrompt(char.generatedPrompt ? { masterPrompt: char.generatedPrompt, negativePrompt: '' } : null);
     setAiGeneratedImageUrl(null);
     setAiGenerateError(null);
@@ -158,9 +132,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
         existing?.referenceImageUrl ||
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
       generatedPrompt: cachedPrompt?.masterPrompt || existing?.generatedPrompt,
-      clothingType: clothingType || undefined,
-      clothingColor: clothingColor || undefined,
-      wearsSunglasses,
       shotCount: existing?.shotCount || 0,
       createdAt: existing?.createdAt || new Date().toISOString(),
     };
@@ -526,58 +497,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                 />
               </div>
 
-              {/* Outfit & Styling — stays consistent across every shot/video for this character */}
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
-                <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block">
-                  Outfit & Styling (Consistent Across All Shots)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
-                      Clothing Type
-                    </label>
-                    <select
-                      value={clothingType}
-                      onChange={(e) => setClothingType(e.target.value as ClothingType | '')}
-                      className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
-                    >
-                      <option value="">No preference</option>
-                      {CLOTHING_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">
-                      Clothing Color
-                    </label>
-                    <select
-                      value={clothingColor}
-                      onChange={(e) => setClothingColor(e.target.value as ClothingColor | '')}
-                      className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
-                    >
-                      <option value="">No preference</option>
-                      {CLOTHING_COLORS.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer w-fit">
-                  <input
-                    type="checkbox"
-                    checked={wearsSunglasses}
-                    onChange={(e) => setWearsSunglasses(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-[#F27D26] cursor-pointer"
-                  />
-                  <span>Wears sunglasses</span>
-                </label>
-              </div>
-
               <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] uppercase tracking-widest text-[#F27D26] font-bold flex items-center gap-1.5">
@@ -762,23 +681,6 @@ export const CharacterVault: React.FC<CharacterVaultProps> = ({
                   <p className="text-xs text-white/80">{selectedCharacter.personality}</p>
                 </div>
               </div>
-
-              {(selectedCharacter.clothingType || selectedCharacter.clothingColor || selectedCharacter.wearsSunglasses) && (
-                <div className="p-4 rounded-xl bg-black/60 border border-white/5 space-y-1">
-                  <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold text-white">
-                    Outfit & Styling (Consistent Across Shots)
-                  </span>
-                  <p className="text-xs text-white/80">
-                    {[
-                      selectedCharacter.clothingColor,
-                      selectedCharacter.clothingType,
-                      selectedCharacter.wearsSunglasses ? 'com óculos escuros' : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || '—'}
-                  </p>
-                </div>
-              )}
 
               <div className="p-4 rounded-xl bg-black/60 border border-white/5 space-y-2">
                 <span className="text-[10px] uppercase tracking-widest text-[#F27D26] font-bold">

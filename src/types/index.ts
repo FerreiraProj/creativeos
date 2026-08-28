@@ -110,10 +110,6 @@ export interface Character {
   generatedPrompt?: string;
   shotCount?: number;
   createdAt: string;
-  // Outfit stays consistent across every shot/video for this character.
-  clothingType?: ClothingType;
-  clothingColor?: ClothingColor;
-  wearsSunglasses?: boolean;
 }
 
 export interface Shot {
@@ -184,6 +180,12 @@ export interface Creative {
   // Shared background/environment description applied to every shot unless a shot sets
   // its own Shot.backgroundEnvironment override.
   defaultBackgroundEnvironment?: string;
+  // Character outfit for this specific video — chosen per creative (not per character), so
+  // the same character can wear a different outfit in each video while staying consistent
+  // across every shot within this one.
+  clothingType?: ClothingType;
+  clothingColor?: ClothingColor;
+  wearsSunglasses?: boolean;
   targetDuration: number;
   finalVideoUrl?: string;
   previewImageUrl?: string;

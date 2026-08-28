@@ -117,7 +117,7 @@ Return valid JSON with an array of objects.`;
 // Endpoint: AI Script Writer (Multi-Shot Breakdown)
 router.post('/script', async (req, res) => {
   try {
-    const { brandMemory, creativeMemory, idea, character, channel, format, targetDuration = 25, creativeObjective, defaultBackgroundEnvironment } = req.body;
+    const { brandMemory, creativeMemory, idea, character, channel, format, targetDuration = 25, creativeObjective, defaultBackgroundEnvironment, clothingType, clothingColor, wearsSunglasses } = req.body;
     const { ai, model } = resolveAi(req.body);
 
     let scriptObjectiveGuide = '';
@@ -152,12 +152,16 @@ CRITICAL SEQUENCING RULES:
 
 CRITICAL LANGUAGE RULE: When explaining a biological, scientific, or physiological mechanism (e.g., receptors, neurotransmitters, hormones, enzymes), always describe it in simple, everyday conversational language — the way a relatable creator would explain it to a friend — never in clinical, pharmacological, or medical-textbook terminology. For example, prefer "engana o teu cérebro para não sentires o cansaço" over "bloqueia os recetores de adenosina". This keeps the authentic UGC voice AND avoids overly clinical phrasing that can be misread as medical/pharmaceutical claims when the shot is later turned into an AI-generated video.
 
+CRITICAL AUDIO RULE (non-negotiable): These shots will be turned into AI-generated video with real audio. NEVER mention, suggest, or imply background music, a soundtrack, or any music track in visualPrompt, cameraMovement, or any other field for any shot — only the character's spoken dialogue and natural ambient sound are allowed.
+
 Idea / Angle:
 ${JSON.stringify(idea, null, 2)}
 
 Character Profile:
 ${character ? JSON.stringify(character, null, 2) : 'Default authentic creator'}
-${character?.clothingType || character?.clothingColor || character?.wearsSunglasses ? `\nIMPORTANT: This character's outfit (clothing type/color, sunglasses if set above) MUST be described identically and consistently in every single shot's visualPrompt — never change or omit it between shots.` : ''}
+
+Outfit for THIS video (chosen per video, not a fixed trait of the character):
+${clothingType || clothingColor || wearsSunglasses ? `Wearing a ${[clothingColor, clothingType].filter(Boolean).join(' ')}${wearsSunglasses ? ', with sunglasses' : ''}. IMPORTANT: this outfit MUST be described identically and consistently in every single shot's visualPrompt — never change or omit it between shots.` : 'Not specified — keep whatever outfit you choose consistent across all shots.'}
 
 Background/Environment:
 ${defaultBackgroundEnvironment ? `${defaultBackgroundEnvironment} — keep this same setting consistent across every shot's visualPrompt unless the idea genuinely requires a scene change.` : 'Not specified — keep whatever background/setting you choose consistent across all shots.'}
@@ -263,6 +267,8 @@ Context:
 ${shotGuide}
 
 CRITICAL LANGUAGE RULE: When explaining a biological, scientific, or physiological mechanism (e.g., receptors, neurotransmitters, hormones, enzymes), always describe it in simple, everyday conversational language — the way a relatable creator would explain it to a friend — never in clinical, pharmacological, or medical-textbook terminology. For example, prefer "engana o teu cérebro para não sentires o cansaço" over "bloqueia os recetores de adenosina". This keeps the authentic UGC voice AND avoids overly clinical phrasing that can be misread as medical/pharmaceutical claims when the shot is later turned into an AI-generated video.
+
+CRITICAL AUDIO RULE (non-negotiable): This shot will be turned into AI-generated video with real audio. NEVER mention, suggest, or imply background music, a soundtrack, or any music track in visualPrompt or any other field — only the character's spoken dialogue and natural ambient sound are allowed.
 
 Provide an updated shot object with:
 - shotNumber (${shotNumber})

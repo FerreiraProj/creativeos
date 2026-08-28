@@ -185,13 +185,15 @@ export const ShotStudio: React.FC<ShotStudioProps> = ({
     if (!activeCreative || !activeShot || !character?.referenceImageUrl) return;
     setIsSubmittingVideoJob(true);
     try {
-      // Outfit stays consistent across every shot (character-level); background/environment
-      // defaults to the creative-level setting but can be overridden per shot.
+      // Outfit is chosen per video (Creative), not per character, so the same character can
+      // wear a different outfit in each video while staying consistent across every shot in
+      // this one; background/environment defaults to the creative-level setting but can be
+      // overridden per shot.
       const outfitBits: string[] = [];
-      if (character.clothingColor || character.clothingType) {
-        outfitBits.push(`wearing a ${[character.clothingColor, character.clothingType].filter(Boolean).join(' ')}`);
+      if (activeCreative.clothingColor || activeCreative.clothingType) {
+        outfitBits.push(`wearing a ${[activeCreative.clothingColor, activeCreative.clothingType].filter(Boolean).join(' ')}`);
       }
-      if (character.wearsSunglasses) {
+      if (activeCreative.wearsSunglasses) {
         outfitBits.push('wearing sunglasses');
       }
       const outfitDescription = outfitBits.length > 0 ? ` ${character.name}, ${outfitBits.join(', ')}.` : '';
@@ -199,7 +201,11 @@ export const ShotStudio: React.FC<ShotStudioProps> = ({
       const environment = activeShot.backgroundEnvironment?.trim() || activeCreative.defaultBackgroundEnvironment?.trim();
       const environmentDescription = environment ? ` Setting/background: ${environment}.` : '';
 
-      const prompt = `${activeShot.visualPrompt}.${outfitDescription}${environmentDescription} <IMAGE_REF_0> speaking: "${activeShot.spokenText}". Emotion: ${activeShot.characterEmotion}. Camera: ${activeShot.cameraMovement}.`;
+      // Non-negotiable: no background music, ever — only the character's spoken dialogue and
+      // natural ambient sound (room tone), no music track under the voice.
+      const noMusicInstruction = ' Audio: absolutely NO background music or soundtrack of any kind — only the character\'s spoken dialogue and natural ambient sound.';
+
+      const prompt = `${activeShot.visualPrompt}.${outfitDescription}${environmentDescription} <IMAGE_REF_0> speaking: "${activeShot.spokenText}". Emotion: ${activeShot.characterEmotion}. Camera: ${activeShot.cameraMovement}.${noMusicInstruction}`;
       const { requestId } = await submitShotVideoGeneration({
         prompt,
         imageUrls: [character.referenceImageUrl],

@@ -35,6 +35,8 @@ import {
   CreativeObjective,
   Recipe,
   AiGatewayConfig,
+  ClothingType,
+  ClothingColor,
 } from '../types';
 import { PRESET_RECIPES } from '../lib/constants';
 import {
@@ -123,6 +125,27 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
   // in Shot Studio) — keeps the setting visually consistent across the whole video by default.
   const [defaultBackgroundEnvironment, setDefaultBackgroundEnvironment] = useState<string>('');
 
+  // Outfit for this video — chosen per creative (not per character), so the same character
+  // can wear a different outfit each time, staying consistent across every shot in this one.
+  const [clothingType, setClothingType] = useState<ClothingType | ''>('');
+  const [clothingColor, setClothingColor] = useState<ClothingColor | ''>('');
+  const [wearsSunglasses, setWearsSunglasses] = useState(false);
+
+  const CLOTHING_TYPES: ClothingType[] = ['T-Shirt', 'Camisa', 'Polo', 'Camisola', 'Hoodie', 'Sweatshirt'];
+  const CLOTHING_COLORS: ClothingColor[] = [
+    'Branco',
+    'Preto',
+    'Cinzento',
+    'Castanho Claro',
+    'Castanho Escuro',
+    'Bordeaux',
+    'Rosa Claro',
+    'Rosa Choque',
+    'Roxo',
+    'Verde Militar',
+    'Verde Oliva',
+  ];
+
   // AI Output states
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState<IdeaResult[]>([]);
@@ -195,6 +218,9 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
         creativeObjective: selectedObjective,
         targetDuration,
         defaultBackgroundEnvironment: defaultBackgroundEnvironment.trim() || undefined,
+        clothingType: clothingType || undefined,
+        clothingColor: clothingColor || undefined,
+        wearsSunglasses,
         aiGatewayConfig,
       });
       setGeneratedScript(script);
@@ -341,6 +367,9 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
       cta: generatedScript?.mainCta || 'Visit link to learn more.',
       targetDuration,
       defaultBackgroundEnvironment: defaultBackgroundEnvironment.trim() || undefined,
+      clothingType: clothingType || undefined,
+      clothingColor: clothingColor || undefined,
+      wearsSunglasses,
       tags: [
         selectedFormat,
         selectedChannel,
@@ -707,6 +736,57 @@ export const CreativeStudio: React.FC<CreativeStudioProps> = ({
               />
               <p className="text-[10px] text-white/40 mt-1">
                 Mantém-se igual em todos os shots. Podes definir um fundo diferente para um shot específico no Shot Studio.
+              </p>
+            </div>
+
+            {/* Outfit & Styling — chosen per video, stays consistent across every shot in it */}
+            <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
+              <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block">
+                Outfit & Styling (Consistente em Todos os Shots)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">Tipo de Roupa</label>
+                  <select
+                    value={clothingType}
+                    onChange={(e) => setClothingType(e.target.value as ClothingType | '')}
+                    className="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
+                  >
+                    <option value="">Sem preferência</option>
+                    {CLOTHING_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">Cor</label>
+                  <select
+                    value={clothingColor}
+                    onChange={(e) => setClothingColor(e.target.value as ClothingColor | '')}
+                    className="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-hidden focus:border-[#F27D26]"
+                  >
+                    <option value="">Sem preferência</option>
+                    {CLOTHING_COLORS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer w-fit">
+                <input
+                  type="checkbox"
+                  checked={wearsSunglasses}
+                  onChange={(e) => setWearsSunglasses(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-[#F27D26] cursor-pointer"
+                />
+                <span>Usa óculos escuros</span>
+              </label>
+              <p className="text-[10px] text-white/40">
+                Escolhido por vídeo — a mesma personagem pode usar roupa diferente em cada criativo, mantendo-se igual em todos os shots deste.
               </p>
             </div>
 
